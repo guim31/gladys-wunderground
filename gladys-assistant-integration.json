@@ -1,177 +1,226 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Weather Underground",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Weather Underground personal weather stations: temperature, wind, rain, pressure, UV, sun.",
+    "fr": "Stations météo personnelles Weather Underground : température, vent, pluie, pression, UV, soleil.",
+    "de": "Private Wetterstationen von Weather Underground: Temperatur, Wind, Regen, Luftdruck, UV, Sonne.",
+    "es": "Estaciones meteorológicas personales de Weather Underground: temperatura, viento, lluvia, UV, sol."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-wunderground:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-wunderground/main/cover.png",
+  "categories": ["environment"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your API key",
+        "fr": "Votre clé d'API",
+        "de": "Dein API-Schlüssel",
+        "es": "Su clave de API"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Weather Underground gives a free API key to anyone whose personal weather station sends data to it: sign in on wunderground.com, then open Member settings, API Keys. The key reads your station and any other public station.",
+        "fr": "Weather Underground donne une clé d'API gratuite à qui lui envoie les données d'une station météo personnelle : connectez-vous sur wunderground.com, puis Member settings, API Keys. La clé lit votre station et toute autre station publique.",
+        "de": "Weather Underground gibt allen, deren private Wetterstation Daten dorthin sendet, einen kostenlosen API-Schlüssel: Melde dich auf wunderground.com an und öffne Member settings, API Keys. Der Schlüssel liest deine Station und jede andere öffentliche Station.",
+        "es": "Weather Underground da una clave de API gratuita a quien le envía los datos de una estación meteorológica personal: inicie sesión en wunderground.com y abra Member settings, API Keys. La clave lee su estación y cualquier otra estación pública."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://www.wunderground.com/member/api-keys",
+          "label": {
+            "en": "Weather Underground API keys",
+            "fr": "Clés d'API Weather Underground",
+            "de": "API-Schlüssel von Weather Underground",
+            "es": "Claves de API de Weather Underground"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d'API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "32 characters. 1,500 calls a day per key: the refresh interval is slowed down to stay below it.",
+        "fr": "32 caractères. 1 500 appels par jour et par clé : l'intervalle est allongé pour rester en dessous.",
+        "de": "32 Zeichen. 1.500 Aufrufe pro Tag und Schlüssel: Das Intervall wird verlängert, um darunter zu bleiben.",
+        "es": "32 caracteres. 1.500 llamadas al día por clave: el intervalo se alarga para no superarlas."
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "station_ids",
+      "type": "string",
+      "label": {
+        "en": "Station ids",
+        "fr": "Identifiants des stations",
+        "de": "Stations-IDs",
+        "es": "Identificadores de las estaciones"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Separated by commas, 10 at most: yours or neighbors' (the ID on the station page, not its name).",
+        "fr": "Séparés par des virgules, 10 au plus : la vôtre ou des voisines (l'ID de la page de la station, pas son nom).",
+        "de": "Durch Kommas getrennt, höchstens 10: deine oder benachbarte (die ID auf der Stationsseite, nicht der Name).",
+        "es": "Separados por comas, 10 como máximo: la suya o vecinas (el ID de la página de la estación, no su nombre)."
+      },
+      "placeholder": {
+        "en": "e.g. IPARIS123, KCASANFR1234",
+        "fr": "ex. IPARIS123, ILYON456",
+        "de": "z. B. IBERLIN123, IMUNICH456",
+        "es": "p. ej. IMADRID123, IBARCE456"
+      },
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "refresh_minutes",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often each station is read. Beyond 4 stations, 5 minutes would exceed the daily quota: slowed down automatically.",
+        "fr": "Fréquence de lecture de chaque station. Au-delà de 4 stations, 5 minutes dépasseraient le quota du jour : ralenti automatiquement.",
+        "de": "Wie oft jede Station gelesen wird. Ab 5 Stationen würden 5 Minuten das Tageskontingent überschreiten: automatisch verlangsamt.",
+        "es": "Con qué frecuencia se lee cada estación. Con más de 4 estaciones, 5 minutos superarían la cuota diaria: se ralentiza solo."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "5",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "5",
+          "label": { "en": "5 minutes", "fr": "5 minutes", "de": "5 Minuten", "es": "5 minutos" }
+        },
+        {
+          "value": "10",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 minutes",
+            "fr": "15 minutes",
+            "de": "15 Minuten",
+            "es": "15 minutos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 minutes",
+            "fr": "30 minutes",
+            "de": "30 Minuten",
+            "es": "30 minutos"
+          }
+        },
+        {
+          "value": "60",
+          "label": { "en": "1 hour", "fr": "1 heure", "de": "1 Stunde", "es": "1 hora" }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de las funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when a station is added (Temperature, Wind speed...).",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout d'une station (Température, Vitesse du vent…).",
+        "de": "Namen der Funktionen beim Hinzufügen einer Station (Temperatur, Windgeschwindigkeit…).",
+        "es": "Nombres de las funciones al añadir una estación (Temperatura, Velocidad del viento…)."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
       },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
       "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+        "en": "Reads every station now (one API call each) and reports how each one answered.",
+        "fr": "Lit chaque station maintenant (un appel d'API chacune) et indique comment chacune a répondu.",
+        "de": "Liest jede Station sofort (ein API-Aufruf pro Station) und meldet, wie jede geantwortet hat.",
+        "es": "Lee cada estación ahora (una llamada a la API por estación) e indica cómo ha respondido cada una."
       },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
+      "timeout_seconds": 60
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "station",
+      "label": {
+        "en": "Weather station",
+        "fr": "Station météo",
+        "de": "Wetterstation",
+        "es": "Estación meteorológica"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The last observation of a station: temperature, wind, rain, pressure, UV, with its age.",
+        "fr": "La dernière observation d'une station : température, vent, pluie, pression, UV, avec son âge.",
+        "de": "Die letzte Messung einer Station: Temperatur, Wind, Regen, Luftdruck, UV, mit ihrem Alter.",
+        "es": "La última observación de una estación: temperatura, viento, lluvia, presión, UV, con su antigüedad."
+      },
+      "icon": "cloud",
+      "settings": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station (empty: the first)",
+            "fr": "Station (vide : la première)",
+            "de": "Station (leer: die erste)",
+            "es": "Estación (vacío: la primera)"
+          }
+        }
+      ]
     }
   ]
 }

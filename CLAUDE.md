@@ -31,16 +31,23 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+index.js                          SDK wiring only: registerHandlers(gladys), shutdown, connect()
+src/app.js                        every SDK handler (connected, scan, poll, devices, config, action, widget)
+src/hub.js                        StationHub: cache of observations, API reads and back-off, states,
+                                  transport badges, connection status, "Test the connection" report
+src/poller.js                     the container's own polling timer (Gladys#3198), core onPoll as fallback
+src/station.js                    the station device: frozen feature keys, bounds, states, staleness
+src/wu/client.js                  api.weather.com client (PWS current observation), error kinds
+src/wu/observation.js             raw observation -> normalized values (feels like, lux, compass)
+src/widgets.js                    the "station" dashboard widget (pure content builder)
+src/i18n.js                       every text in en/fr/de/es (feature names, statuses, report, widget)
+src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults), station list, quota pace
+src/issues.js                     repeated failures logged once (warn, then info on recovery)
+scripts/probe.mjs                 read-only probe of the real API (fake key, then WU_API_KEY + stations)
+gladys-assistant-integration.json manifest: name, config_schema, actions, widgets, image...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys, same sections
+test/                             node --test, against the SDK's fake Gladys and a fake api.weather.com
+test/fixtures/wu/                 API answers written from the documentation (no capture yet)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +77,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, statuses, widget texts, feature
+  names, manifest texts, and `docs/{en,fr,de,es}.md` with the same sections.
+  `test/i18n.test.js` enforces it.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +242,48 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Weather Underground (propre à cette intégration)
+
+**API.** `GET https://api.weather.com/v2/pws/observations/current?stationId=…&format=json&units=m&numericPrecision=decimal&apiKey=…`
+(The Weather Company, « PWS Observations - Current Conditions »). Clé gratuite réservée aux membres dont
+la station envoie à Weather Underground ; elle lit aussi toute autre station publique.
+
+- `200` : `{ observations: [obs] }`, la plus récente des 60 dernières minutes. Valeurs à unité sous
+  `obs.metric` (`temp`, `heatIndex`, `dewpt`, `windChill`, `windSpeed`, `windGust`, `pressure` (hPa,
+  niveau de la mer), `precipRate`, `precipTotal` (depuis minuit local), `elev`) ; sans unité à la racine
+  (`humidity`, `winddir`, `uv`, `solarRadiation` en W/m²). Un capteur absent vaut `null`, jamais 0.
+- `204` sans corps : aucune observation depuis une heure **ou** identifiant inconnu, indiscernables.
+- `401` : clé refusée, corps `{ errors: [{ error: { code: "CDN-0001" } }] }`. `429` : quota.
+- **Quota : 1 500 appels par jour et 30 par minute, par clé** (partagée avec les autres outils de
+  l'utilisateur). Budget de 1 350 par jour (`DAILY_CALL_BUDGET`) : au-delà de 4 stations à 5 minutes,
+  l'intervalle s'allonge seul. Le widget, `onDeviceCreated`, `onPoll` dans la période et la reconnexion
+  sont servis par le cache : seul le minuteur (et le bouton de test, et la découverte) appelle l'API.
+- La clé est dans l'URL : ne jamais journaliser l'URL ni la mettre dans un message d'erreur
+  (`test/logs.test.js` le vérifie, même en debug).
+- **Non vérifié en réel** : la session de développement n'atteint pas `api.weather.com` (proxy). Les
+  fixtures sont écrites d'après la documentation et les intégrations openHAB / HACS ;
+  `scripts/probe.mjs` est à lancer depuis une machine qui a le réseau. Le dépôt HACS de cytech n'a pas
+  de fichier de licence : lu pour comprendre l'API, rien n'est recopié.
+
+**Choix et pièges.**
+
+- **Station muette** : au-delà de 30 minutes sans nouvelle observation, ne publier que
+  `observation_age` ; le heartbeat de `publishChangedStates` renverrait sinon une vieille température
+  comme si elle était fraîche. Pastille de transport `cloud` + `degraded` avec message.
+- **Pas d'unité W/m² dans Gladys** : le rayonnement solaire devient `light-sensor/decimal` en lux,
+  × 126,7 (facteur des stations Ecowitt, qui envoient lux / 126,7). La valeur W/m² reste dans le widget.
+- Pluie du jour : `precipitation-sensor/decimal` en `millimeter-per-day` (les unités du cœur pour cette
+  catégorie sont mm/h et mm/jour ; Netatmo publie son cumul 24 h ainsi).
+- Âge de l'observation : `duration/integer` en minutes, il grandit tant que la station se tait ; c'est
+  lui qu'une scène surveille (« au-dessus de 60 min »). Pas de déclencheur de scène : il doublonnerait
+  les états (pluie, vent, âge) que les cartes standard savent déjà comparer à un seuil.
+- Identifiant de station envoyé tel que saisi (la doc HACS le dit sensible à la casse) ; l'`external_id`
+  utilise sa forme majuscule pour qu'une ressaisie dans une autre casse reste le même appareil.
+- Une fonctionnalité dont le capteur est absent (`null` à la découverte : UV, solaire, vent, pluie)
+  n'est pas créée ; si le capteur arrive plus tard, une découverte propose « Mettre à jour ».
+- Pas de prévisions : les services météo de Gladys les fournissent déjà. `scripts/probe.mjs` vérifie
+  si une clé PWS a droit à `/v3/wx/forecast/daily/5day` : question ouverte.
+- Le minuteur `AbortSignal.timeout` ne retient pas la boucle d'événements : un test qui l'attend doit
+  garder un minuteur actif. Le heartbeat du SDK date avec `Date.now()` : le simuler avec
+  `t.mock.timers.enable({ apis: ['Date'] })`.

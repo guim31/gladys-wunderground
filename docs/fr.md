@@ -1,67 +1,158 @@
-# Template de démonstration
+# Weather Underground
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Votre station météo personnelle, telle que publiée sur Weather Underground, dans Gladys : température,
+humidité, vent, pluie, pression, UV et soleil, relevés toutes les 5 minutes par l'API officielle que The
+Weather Company donne aux propriétaires de stations. Toute autre station publique peut aussi être
+suivie, celle d'un voisin par exemple.
 
-## Ce que vous obtenez
+Cette intégration n'est ni affiliée à Weather Underground, The Weather Company ou IBM, ni approuvée par
+eux. Elle a été développée sans le matériel et sans clé d'API : vos retours sont les bienvenus.
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Présentation
+
+- **Un appareil par station**, avec ses capteurs comme fonctionnalités : température, température
+  ressentie, point de rosée, humidité, pression, vitesse, rafales et direction du vent, intensité de
+  pluie et pluie du jour, indice UV, luminosité (tirée du rayonnement solaire) et âge de la dernière
+  observation.
+- **Un widget de tableau de bord** qui montre la dernière observation d'une station et son âge.
+- **Une station muette est signalée** : ses valeurs ne sont plus rafraîchies, l'âge de son observation
+  continue de grandir et sa pastille passe à l'orange dans la liste des appareils.
+- Lecture seule : rien n'est piloté, rien n'est envoyé à Weather Underground.
+
+Toute station convient, quelle que soit sa marque (Ecowitt, Davis, Ambient Weather, Netatmo par une
+passerelle, WeeWX…), du moment qu'elle envoie ses données à Weather Underground.
+
+## Prérequis
+
+- Gladys 5.1 ou plus récent.
+- Une **clé d'API Weather Underground**. Elle est gratuite, mais réservée aux membres dont la station
+  météo personnelle envoie des données à Weather Underground : connectez-vous sur wunderground.com,
+  ouvrez **Member settings**, puis **API Keys**, et générez une clé (32 caractères).
+- L'**identifiant** de chaque station à suivre : il figure sur la page de la station (par exemple
+  `IPARIS123` ou `KCASANFR1234`). C'est l'ID, pas le nom de la station.
+- Gladys doit accéder à Internet (`api.weather.com`).
 
 ## Configuration
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+1. Dans **Intégrations**, installez Weather Underground puis ouvrez son onglet **Configuration**.
+2. Collez la **clé d'API**.
+3. Saisissez les **identifiants des stations**, séparés par des virgules (10 au plus).
+4. Choisissez l'**intervalle de rafraîchissement** (5 minutes par défaut) et la **langue des noms de
+   fonctionnalités**.
+5. Enregistrez, puis cliquez sur **Tester la connexion** : chaque station répond avec sa température et
+   l'âge de son observation.
+6. Ouvrez l'onglet **Découverte** et ajoutez les stations.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+Les noms des fonctionnalités sont choisis à l'ajout d'une station : changez la langue avant de l'ajouter.
 
-## Actions
+## Les appareils station
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Chaque station est un appareil nommé d'après son quartier et son identifiant (« Les Chartreux
+(IPARIS123) »), avec ces fonctionnalités, en unités métriques :
 
-## Scènes
+| Fonctionnalité                   | Unité | Remarque                                                                   |
+| -------------------------------- | ----- | -------------------------------------------------------------------------- |
+| Température                      | °C    |                                                                            |
+| Température ressentie            | °C    | refroidissement éolien par temps froid et venteux, indice de chaleur sinon |
+| Point de rosée                   | °C    |                                                                            |
+| Humidité                         | %     |                                                                            |
+| Pression atmosphérique           | hPa   | pression ramenée au niveau de la mer                                       |
+| Vitesse du vent, rafales         | km/h  | seulement pour une station équipée d'un anémomètre                         |
+| Direction du vent                | °     | 0 = nord, 90 = est                                                         |
+| Intensité de pluie               | mm/h  | seulement pour une station équipée d'un pluviomètre                        |
+| Pluie du jour                    | mm/j  | depuis minuit, heure locale                                                |
+| Indice UV                        |       | seulement pour une station équipée d'un capteur UV                         |
+| Luminosité (rayonnement solaire) | lux   | W/m² × 126,7, voir les limites                                             |
+| Âge de l'observation             | min   | minutes écoulées depuis la dernière observation de la station              |
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Une fonctionnalité pour laquelle la station n'a pas de capteur n'est pas créée. Seules les valeurs qui
+changent sont envoyées à Gladys, et chaque valeur est renvoyée au moins toutes les 6 heures pour ne
+jamais paraître périmée.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+Quand une station n'envoie plus de données (coupure de courant, Wi-Fi en panne), Weather Underground
+garde sa dernière observation une heure. Après **30 minutes** sans nouvelle observation, l'intégration
+cesse de rafraîchir les valeurs (une vieille température semblerait actuelle), continue de mettre à jour
+l'**âge de l'observation** et signale la station par une pastille orange dans la liste des appareils.
+Tout revient à l'observation suivante.
 
-## Tableau de bord
+## Widget de tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Ajoutez le widget **Station météo** à un tableau de bord et choisissez une station (vide : la première).
+Il affiche :
+
+- la température, l'humidité, le vent, la pluie du jour et la pression, en direct ;
+- la courbe de température des dernières 24 heures (une fois la station ajoutée à Gladys) ;
+- l'heure de l'observation et son âge (en orange quand la station est muette), la température ressentie,
+  le point de rosée, les rafales, la direction du vent, l'intensité de pluie, l'indice UV et le
+  rayonnement solaire en W/m².
+
+Le widget n'appelle jamais l'API : il montre la dernière observation relevée.
+
+## Déclencheurs et actions de scène
+
+L'intégration ne déclare ni déclencheur ni action de scène propres : chaque valeur est une fonctionnalité
+de l'appareil station, que les cartes de scène standard savent déjà traiter (**Changement d'état d'un
+appareil**, avec un seuil, et **Récupérer la valeur d'un appareil**). Un déclencheur « il commence à
+pleuvoir » ne ferait que répéter « intensité de pluie supérieure à 0 ».
+
+## Exemples de scènes
+
+- **Alerte pluie** : quand l'_Intensité de pluie_ de votre station dépasse 0 mm/h, envoyer « Il pleut,
+  rentrez le linge » et fermer le velux.
+- **Risque de gel** : quand la _Température_ passe sous 1 °C le soir, envoyer un message pour couvrir
+  les plantes.
+- **Arrosage inutile** : avant la scène d'arrosage du jardin, lire la _Pluie du jour_ et s'arrêter si
+  elle dépasse 5 mm.
+- **Station en panne** : quand l'_Âge de l'observation_ dépasse 60 minutes, envoyer un message pour
+  vérifier l'alimentation et le Wi-Fi de la station.
+- **Store banne** : quand les _Rafales_ dépassent 40 km/h, rentrer le store.
+
+## Quota de l'API et rafraîchissement
+
+Une clé Weather Underground permet **1 500 appels par jour et 30 par minute**, pour tous les outils qui
+l'utilisent. Chaque station coûte un appel par rafraîchissement : 288 appels par jour à 5 minutes.
+Au-delà de 4 stations, l'intégration ralentit d'elle-même le rafraîchissement (5 stations : toutes les
+6 minutes ; 10 stations : toutes les 11 minutes) et garde environ 10 % du quota pour les redémarrages et
+les tests. Si vous utilisez la même clé ailleurs (autre domotique, script), choisissez un intervalle plus
+long.
+
+Si le quota est malgré tout dépassé, les relevés s'interrompent 15 minutes. Une clé refusée est
+réessayée toutes les heures, ou dès que la configuration est enregistrée.
+
+Les observations viennent des stations elles-mêmes, toutes les quelques minutes : rafraîchir plus vite
+que 5 minutes n'apporterait rien de neuf.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« Weather Underground refuse la clé d'API »** : recopiez la clé depuis **Member settings → API
+  Keys**. Weather Underground peut désactiver la clé d'une station qui n'envoie plus rien depuis longtemps.
+- **« Aucune observation depuis une heure (station hors ligne ou identifiant inconnu) »** : l'API ne
+  distingue pas une station hors ligne d'un identifiant erroné. Vérifiez l'identifiant sur la page de
+  la station (lettres et chiffres, comme `IPARIS123`) et que la station affiche des données récentes sur
+  wunderground.com.
+- **« Identifiant refusé par l'API »** : l'identifiant contient quelque chose que l'API rejette :
+  ressaisissez-le.
+- **« Quota de l'API dépassé »** : voir « Quota de l'API et rafraîchissement » ; les relevés reprennent
+  après 15 minutes.
+- **« L'API Weather Underground ne répond pas »** : Gladys n'atteint pas `api.weather.com` : vérifiez
+  sa connexion Internet et son DNS.
+- **Une fonctionnalité manque** : la station n'envoyait aucune valeur pour ce capteur quand elle a été
+  ajoutée. Si le capteur est arrivé ensuite, lancez une recherche dans l'onglet **Découverte** et mettez
+  l'appareil à jour.
+- Détails : réglez `LOG_LEVEL=debug` sur le conteneur pour voir chaque relevé dans les journaux de
+  l'intégration. La clé d'API n'y est jamais écrite.
+
+## Limites
+
+- Unités métriques uniquement (°C, km/h, hPa, mm).
+- La **luminosité** est calculée à partir du rayonnement solaire (W/m² × 126,7, le facteur qu'utilisent
+  les stations Ecowitt pour envoyer leur mesure en lux sous forme de W/m²) : exacte pour ces stations,
+  approximation de la lumière du jour pour un pyranomètre (Davis). Le widget affiche aussi la valeur en
+  W/m².
+- Pas de prévisions : les services météo de Gladys (OpenWeather, Météo-France…) les fournissent déjà ;
+  cette intégration apporte ce qu'ils ne peuvent pas, les mesures d'une station toute proche.
+- 10 stations au plus par clé.
+- Les données et leur disponibilité dépendent de The Weather Company, qui peut modifier ou arrêter
+  cette API gratuite à tout moment.
+- Développée sans le matériel et sans clé d'API : les réponses de l'API sont tirées de sa
+  documentation, pas encore d'une vraie station. Vos retours sont les bienvenus sur le dépôt GitHub.

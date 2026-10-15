@@ -1,0 +1,33 @@
+{
+  "observations": [
+    {
+      "stationID": "IGLADYS13",
+      "obsTimeUtc": "2026-10-15T12:04:00Z",
+      "obsTimeLocal": "2026-10-15 14:04:00",
+      "neighborhood": "Col du Lautaret",
+      "softwareType": "Weather logger V3.0.8",
+      "country": "FR",
+      "solarRadiation": 96.0,
+      "lon": 6.4,
+      "realtimeFrequency": null,
+      "epoch": 1792065840,
+      "lat": 45.03,
+      "uv": 1.0,
+      "winddir": 2,
+      "humidity": 88,
+      "qcStatus": 0,
+      "metric": {
+        "temp": -3.2,
+        "heatIndex": -3.2,
+        "dewpt": -4.9,
+        "windChill": -9.6,
+        "windSpeed": 24.1,
+        "windGust": null,
+        "pressure": 1009.4,
+        "precipRate": 1.2,
+        "precipTotal": 6.6,
+        "elev": 2058.0
+      }
+    }
+  ]
+}
