@@ -1,0 +1,10 @@
+{
+  "metadata": { "transaction_id": "1792065912000:-1234567890" },
+  "success": false,
+  "errors": [
+    {
+      "error": { "code": "CDN-0001", "message": "Invalid apiKey." },
+      "moreInfo": "https://www.wunderground.com/member/api-keys"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "observations": [
+    {
+      "stationID": "IGLADYS42",
+      "obsTimeUtc": "2026-10-15T12:05:12Z",
+      "obsTimeLocal": "2026-10-15 14:05:12",
+      "neighborhood": "Les Chartreux",
+      "softwareType": "EasyWeatherPro_V5.1.6",
+      "country": "FR",
+      "solarRadiation": 412.6,
+      "lon": 2.35,
+      "realtimeFrequency": null,
+      "epoch": 1792065912,
+      "lat": 48.85,
+      "uv": 3.0,
+      "winddir": 247,
+      "humidity": 63.0,
+      "qcStatus": 1,
+      "metric": {
+        "temp": 17.4,
+        "heatIndex": 17.4,
+        "dewpt": 10.3,
+        "windChill": 17.4,
+        "windSpeed": 11.2,
+        "windGust": 19.8,
+        "pressure": 1016.93,
+        "precipRate": 0.0,
+        "precipTotal": 2.4,
+        "elev": 52.1
+      }
+    }
+  ]
+}

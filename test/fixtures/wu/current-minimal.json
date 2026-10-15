@@ -1,0 +1,33 @@
+{
+  "observations": [
+    {
+      "stationID": "IGLADYS7",
+      "obsTimeUtc": "2026-10-15T12:01:40Z",
+      "obsTimeLocal": "2026-10-15 14:01:40",
+      "neighborhood": "",
+      "softwareType": "weewx-5.1.0",
+      "country": "FR",
+      "solarRadiation": null,
+      "lon": 4.83,
+      "realtimeFrequency": null,
+      "epoch": 1792065700,
+      "lat": 45.76,
+      "uv": null,
+      "winddir": null,
+      "humidity": 71,
+      "qcStatus": -1,
+      "metric": {
+        "temp": 15.1,
+        "heatIndex": 15.1,
+        "dewpt": 9.9,
+        "windChill": 15.1,
+        "windSpeed": null,
+        "windGust": null,
+        "pressure": 1018.2,
+        "precipRate": null,
+        "precipTotal": null,
+        "elev": 170.0
+      }
+    }
+  ]
+}

@@ -1,61 +1,145 @@
-# Demo Devices Template
+# Weather Underground
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Your personal weather station, as published on Weather Underground, in Gladys: temperature, humidity,
+wind, rain, pressure, UV and sun, read every 5 minutes through the official API The Weather Company
+gives to station owners. Any other public station can be followed too, such as a neighbor's.
 
-## What you get
+This integration is not affiliated with, nor endorsed by, Weather Underground, The Weather Company or
+IBM. It was developed without the hardware and without an API key: feedback welcome.
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## Overview
+
+- **One device per station**, with its sensors as features: temperature, feels-like temperature,
+  dew point, humidity, pressure, wind speed, gusts and direction, rain rate and rain of the day, UV
+  index, light (from the solar radiation) and the age of the last observation.
+- **A dashboard widget** showing the last observation of a station, with how old it is.
+- **A silent station is flagged**: its values are no longer refreshed, the age of its observation keeps
+  growing, and its badge in the device list turns orange.
+- Read-only: nothing is controlled, nothing is sent to Weather Underground.
+
+Any station works, whatever its brand (Ecowitt, Davis, Ambient Weather, Netatmo through a bridge,
+WeeWX…), as long as it uploads to Weather Underground.
+
+## Requirements
+
+- Gladys 5.1 or later.
+- A **Weather Underground API key**. It is free, but only given to members whose personal weather
+  station sends data to Weather Underground: sign in on wunderground.com, open **Member settings**,
+  then **API Keys**, and generate a key (32 characters).
+- The **id** of each station to follow: shown on the station page (for example `IPARIS123` or
+  `KCASANFR1234`). It is the ID, not the name of the station.
+- Gladys must reach the Internet (`api.weather.com`).
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+1. In **Integrations**, install Weather Underground, then open its **Configuration** tab.
+2. Paste the **API key**.
+3. Enter the **station ids**, separated by commas (10 at most).
+4. Pick the **refresh interval** (5 minutes by default) and the **language of the feature names**.
+5. Save, then click **Test the connection**: each station answers with its temperature and the age of
+   its observation.
+6. Open the **Discovery** tab and add the stations.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+The feature names are chosen when a station is added: change the language before adding it.
 
-## Actions
+## The station devices
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+Each station is a device named after its neighborhood and id ("Les Chartreux (IPARIS123)"), with these
+features, in metric units:
 
-## Scenes
+| Feature                 | Unit | Note                                                          |
+| ----------------------- | ---- | ------------------------------------------------------------- |
+| Temperature             | °C   |                                                               |
+| Feels like              | °C   | wind chill when cold and windy, heat index when hot and humid |
+| Dew point               | °C   |                                                               |
+| Humidity                | %    |                                                               |
+| Pressure                | hPa  | sea-level pressure                                            |
+| Wind speed, wind gusts  | km/h | only for a station with an anemometer                         |
+| Wind direction          | °    | 0 = north, 90 = east                                          |
+| Rain rate               | mm/h | only for a station with a rain gauge                          |
+| Rain today              | mm/d | since local midnight                                          |
+| UV index                |      | only for a station with a UV sensor                           |
+| Light (solar radiation) | lux  | W/m² × 126.7, see the limits                                  |
+| Observation age         | min  | minutes since the last observation of the station             |
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+A feature the station has no sensor for is not created. Only the values that change are sent to
+Gladys, and every value is sent again at least every 6 hours so it never looks outdated.
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+When a station stops sending data (power cut, Wi-Fi down), Weather Underground keeps its last
+observation for an hour. After **30 minutes** without a new observation, the integration stops
+refreshing the values (an old temperature would look current), keeps updating the **observation age**,
+and flags the station with an orange dot in the device list. Everything is back at the next
+observation.
 
-## Dashboard
+## Dashboard widget
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+Add the **Weather station** widget to a dashboard and pick a station (empty: the first one). It shows:
+
+- the temperature, humidity, wind, rain of the day and pressure, live;
+- the temperature curve of the last 24 hours (once the station is added to Gladys);
+- the time of the observation and its age (in orange when the station is silent), the feels-like
+  temperature, dew point, gusts, wind direction, rain rate, UV index and solar radiation in W/m².
+
+The widget never calls the API: it shows the last observation read.
+
+## Scene triggers and actions
+
+The integration declares no scene trigger nor scene action of its own: every value is a feature of the
+station device, which the standard scene cards already handle (**A device state changes**, with a
+threshold, and **Get a device value**). A "it starts raining" trigger would only repeat "rain rate above
+0".
+
+## Scene examples
+
+- **Rain alert**: when the _Rain rate_ of your station goes above 0 mm/h, send "It is raining, bring
+  the laundry in" and close the roof window.
+- **Frost warning**: when the _Temperature_ goes below 1 °C in the evening, send a message to cover the
+  plants.
+- **Skip watering**: before the garden watering scene, read _Rain today_ and stop if it is above 5 mm.
+- **Station down**: when the _Observation age_ goes above 60 minutes, send a message to check the
+  station's power and Wi-Fi.
+- **Awning**: when the _Wind gusts_ go above 40 km/h, retract the awning.
+
+## API quota and refresh
+
+A Weather Underground key allows **1,500 calls a day and 30 a minute**, for all the tools using it.
+Each station costs one call per refresh: 288 calls a day at 5 minutes. With more than 4 stations, the
+integration slows the refresh down by itself (5 stations: every 6 minutes; 10 stations: every 11
+minutes) and keeps about 10 % of the quota for restarts and tests. If you use the same key elsewhere
+(another home automation system, a script), pick a slower interval.
+
+When the quota is exceeded anyway, the reads pause for 15 minutes. A refused key is tried again every
+hour, or as soon as the configuration is saved.
+
+The observations come from the stations themselves, every few minutes: refreshing faster than 5
+minutes would bring nothing new.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"Weather Underground refuses the API key"**: copy the key again from **Member settings → API
+  Keys**. Weather Underground may disable the key of a station that stopped uploading long ago.
+- **"No observation in the last hour (offline station or unknown id)"**: the API cannot tell an
+  offline station from a wrong id. Check the id on the station page (letters and digits, such as
+  `IPARIS123`), and that the station shows recent data on wunderground.com.
+- **"Id refused by the API"**: the id contains something the API rejects: retype it.
+- **"API quota exceeded"**: see "API quota and refresh"; the reads resume after 15 minutes.
+- **"The Weather Underground API does not answer"**: Gladys cannot reach `api.weather.com`: check its
+  Internet connection and DNS.
+- **A feature is missing**: the station sent no value for that sensor when it was added. If the sensor
+  came later, run a scan in the **Discovery** tab and update the device.
+- Details: set `LOG_LEVEL=debug` on the container to see each read in the integration logs. The API
+  key is never written in them.
+
+## Limits
+
+- Metric units only (°C, km/h, hPa, mm).
+- **Light** is computed from the solar radiation (W/m² × 126.7, the factor Ecowitt stations use to
+  send their lux reading as W/m²): exact for those stations, an approximation of daylight for a
+  pyranometer (Davis). The widget also shows the W/m² value.
+- No forecast: Gladys' weather services (OpenWeather, Météo-France…) already provide it; this
+  integration brings what they cannot, the measurements of a station next door.
+- 10 stations at most per key.
+- The data and its availability depend on The Weather Company, which may change or end this free API
+  at any time.
+- Developed without the hardware and without an API key: the API answers are taken from its
+  documentation, not from a real station yet. Feedback is welcome on the GitHub repository.
