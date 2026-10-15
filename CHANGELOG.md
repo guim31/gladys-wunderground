@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-15
+
 ### Added
 
 - Weather Underground personal weather stations in Gladys, through the official API The Weather
@@ -27,4 +29,5 @@ the notes of the version's GitHub Release.
 - **Test the connection** button: reads every station and says how each one answered.
 - Feature names, messages, widget and documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-wunderground/commits/main
+[Unreleased]: https://github.com/guim31/gladys-wunderground/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-wunderground/releases/tag/v1.0.1
